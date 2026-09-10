@@ -1,0 +1,33 @@
+name: import-upstream
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/import-upstream.yml"
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bewaar TEAM.md
+        uses: actions/checkout@v4
+
+      - name: Importeer bilawalsidhu/gods-eye-view naar main
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/bilawalsidhu/gods-eye-view.git /tmp/gev
+          rm -rf /tmp/gev/.github/workflows
+          mkdir -p /tmp/gev/.github/workflows
+          cp TEAM.md /tmp/gev/TEAM.md
+          cp .github/workflows/import-upstream.yml /tmp/gev/.github/workflows/import-upstream.yml
+          cd /tmp/gev
+          git checkout --orphan import-main
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Import upstream God's Eye View (MIT) + TEAM.md"
+          git remote add dest "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push dest import-main:main --force
